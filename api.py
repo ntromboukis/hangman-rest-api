@@ -7,13 +7,13 @@ primarily with communication to/from the API's users."""
 
 import logging
 import endpoints
+from google.appengine.api import urlfetch
 from protorpc import remote, messages
 from google.appengine.api import memcache
 from google.appengine.api import taskqueue
 
 from models import User, Game, Score
-from models import StringMessage, NewGameForm, GameForm, MakeMoveForm,\
-    ScoreForms
+from models import StringMessage, NewGameForm, GameForm, MakeMoveForm, ScoreForms
 from utils import get_by_urlsafe
 
 NEW_GAME_REQUEST = endpoints.ResourceContainer(NewGameForm)
@@ -56,18 +56,20 @@ class HangmanApi(remote.Service):
         if not user:
             raise endpoints.NotFoundException(
                     'A User with that name does not exist!')
+        url = 'http://www.setgetgo.com/randomword/get.php'
         try:
-            game = Game.new_game(user.key, request.min,
-                                 request.max, request.attempts)
-        except ValueError:
-            raise endpoints.BadRequestException('Maximum must be greater '
-                                                'than minimum!')
+            result = urlfetch.fetch(url)
+            if result.status_code == 200:
+                target = result.content
+                game = Game.new_game(user.key, request.attempts, target)
+        except urlfetch.Error:
+            logging.exception('Caught exception fetching url')
 
         # Use a task queue to update the average attempts remaining.
         # This operation is not needed to complete the creation of a new game
         # so it is performed out of sequence.
         taskqueue.add(url='/tasks/cache_average_attempts')
-        return game.to_form('Good luck playing Guess a Number!')
+        return game.to_form('Good luck playing Hangman!')
 
     @endpoints.method(request_message=GET_GAME_REQUEST,
                       response_message=GameForm,
@@ -90,7 +92,7 @@ class HangmanApi(remote.Service):
     def make_move(self, request):
         """Makes a move. Returns a game state with message"""
         game = get_by_urlsafe(request.urlsafe_game_key, Game)
-        if game.game_over:
+        if game.game_over or game.attempts_remaining == 0:
             return game.to_form('Game already over!')
 
         game.attempts_remaining -= 1
