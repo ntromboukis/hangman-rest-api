@@ -2,8 +2,6 @@
 entities used by the Game. Because these classes are also regular Python
 classes they can include methods (such as 'to_form' and 'new_game')."""
 
-import random
-import requests
 from datetime import date
 from protorpc import messages
 from google.appengine.ext import ndb
@@ -12,12 +10,12 @@ from google.appengine.ext import ndb
 class User(ndb.Model):
     """User profile"""
     name = ndb.StringProperty(required=True)
-    email =ndb.StringProperty()
+    email = ndb.StringProperty()
 
 
 class Game(ndb.Model):
     """Game object"""
-    target = ndb.StringProperty(required=True, repeated=True)
+    target = ndb.StringProperty(required=True)
     attempts = ndb.IntegerProperty(required=True, default=5)
     attempts_remaining = ndb.IntegerProperty(required=True)
     game_over = ndb.BooleanProperty(required=True, default=False)
@@ -29,7 +27,7 @@ class Game(ndb.Model):
         if attempts < 1:
             raise ValueError('Attempts must be greater than 0')
         game = Game(user=user,
-                    target=requests.get('http://www.setgetgo.com/randomword/get.php').text,
+                    target=target,
                     attempts=attempts,
                     attempts_remaining=attempts,
                     game_over=False)
