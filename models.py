@@ -16,18 +16,20 @@ class User(ndb.Model):
 class Game(ndb.Model):
     """Game object"""
     target = ndb.StringProperty(required=True)
+    target_list = ndb.JsonProperty(required=True)
     attempts = ndb.IntegerProperty(required=True, default=5)
     attempts_remaining = ndb.IntegerProperty(required=True)
     game_over = ndb.BooleanProperty(required=True, default=False)
     user = ndb.KeyProperty(required=True, kind='User')
 
     @classmethod
-    def new_game(cls, user, attempts, target):
+    def new_game(cls, user, attempts, target, target_list):
         """Creates and returns a new game"""
         if attempts < 1:
             raise ValueError('Attempts must be greater than 0')
         game = Game(user=user,
                     target=target,
+                    target_list=target_list,
                     attempts=attempts,
                     attempts_remaining=attempts,
                     game_over=False)
@@ -42,6 +44,7 @@ class Game(ndb.Model):
         form.attempts_remaining = self.attempts_remaining
         form.game_over = self.game_over
         form.message = message
+        form.word = self.target
         return form
 
     def end_game(self, won=False):
@@ -74,6 +77,7 @@ class GameForm(messages.Message):
     game_over = messages.BooleanField(3, required=True)
     message = messages.StringField(4, required=True)
     user_name = messages.StringField(5, required=True)
+    word = messages.StringField(6, required=True)
 
 
 class NewGameForm(messages.Message):
@@ -95,11 +99,11 @@ class ScoreForm(messages.Message):
     guesses = messages.IntegerField(4, required=True)
 
 
-class ScoreForms(messages.Message):
-    """Return multiple ScoreForms"""
-    items = messages.MessageField(ScoreForm, 1, repeated=True)
-
-
 class StringMessage(messages.Message):
     """StringMessage-- outbound (single) string message"""
     message = messages.StringField(1, required=True)
+
+
+class ScoreForms(messages.Message):
+    """Return multiple ScoreForms"""
+    items = messages.MessageField(ScoreForm, 1, repeated=True)
