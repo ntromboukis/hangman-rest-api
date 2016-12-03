@@ -61,7 +61,10 @@ class HangmanApi(remote.Service):
             result = urlfetch.fetch(url)
             if result.status_code == 200:
                 target = result.content
-                game = Game.new_game(user.key, request.attempts, target)
+                target_list = {}
+                for i in target:
+                  target_list[i] = False
+                game = Game.new_game(user.key, request.attempts, target, target_list)
         except urlfetch.Error:
             logging.exception('Caught exception fetching url')
 
