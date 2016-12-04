@@ -63,7 +63,7 @@ class HangmanApi(remote.Service):
                 target = result.content
                 target_list = {}
                 for i in target:
-                  target_list[i] = False
+                    target_list[i] = False
                 game = Game.new_game(user.key, request.attempts, target, target_list)
         except urlfetch.Error:
             logging.exception('Caught exception fetching url')
@@ -94,26 +94,30 @@ class HangmanApi(remote.Service):
                       http_method='PUT')
     def make_move(self, request):
         """Makes a move. Returns a game state with message"""
+        found = False
         game = get_by_urlsafe(request.urlsafe_game_key, Game)
         if game.game_over or game.attempts_remaining == 0:
             return game.to_form('Game already over!')
 
-        game.attempts_remaining -= 1
-        # if request.guess == game.target:
-        #     game.end_game(True)
-        #     return game.to_form('You win!')
+        d = game.target_list
+        for i in d:
+            if request.guess == i:
+                d[i] = True
+                msg = 'Good guess!'
+                found = True
+        if all(d[x] == True for x in d):
+            game.end_game(True)
+            msg = 'You Win!'
 
-        if request.guess in game.target:
-            msg = 'There were %s %s in the '
-            'word' % (game.target.count(request.guess), request.guess)
-        else:
-            msg = 'Sorry there were no %s in the '
-            'word' % request.guess
+        if not found:
+            game.attempts_remaining -= 1
+            msg = 'Sorry guess again'
 
         if game.attempts_remaining < 1:
             game.end_game(False)
-            return game.to_form(msg + ' Game over!')
+            return game.to_form('Game over!')
         else:
+            game.target_list = d
             game.put()
             return game.to_form(msg)
 
