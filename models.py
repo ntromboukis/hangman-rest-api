@@ -54,7 +54,7 @@ class Game(ndb.Model):
         self.put()
         # Add the game to the score 'board'
         score = Score(user=self.user, date=date.today(), won=won,
-                      guesses=self.attempts_allowed - self.attempts_remaining)
+                      guesses=self.attempts - self.attempts_remaining)
         score.put()
 
 
