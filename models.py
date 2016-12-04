@@ -91,6 +91,10 @@ class MakeMoveForm(messages.Message):
     guess = messages.StringField(1, required=True)
 
 
+class CancelGameForm(messages.Message):
+    cancel = messages.BooleanField(1, default=False)
+
+
 class ScoreForm(messages.Message):
     """ScoreForm for outbound Score information"""
     user_name = messages.StringField(1, required=True)

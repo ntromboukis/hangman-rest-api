@@ -13,7 +13,7 @@ from google.appengine.api import memcache
 from google.appengine.api import taskqueue
 
 from models import User, Game, Score
-from models import StringMessage, NewGameForm, GameForm, MakeMoveForm, ScoreForms
+from models import StringMessage, NewGameForm, GameForm, MakeMoveForm, ScoreForms, CancelGameForm
 from utils import get_by_urlsafe
 
 NEW_GAME_REQUEST = endpoints.ResourceContainer(NewGameForm)
@@ -22,10 +22,14 @@ GET_GAME_REQUEST = endpoints.ResourceContainer(
 MAKE_MOVE_REQUEST = endpoints.ResourceContainer(
     MakeMoveForm,
     urlsafe_game_key=messages.StringField(1),)
+CANCEL_GAME_REQUEST = endpoints.ResourceContainer(
+    CancelGameForm,
+    urlsafe_game_key=messages.StringField(1),)
 USER_REQUEST = endpoints.ResourceContainer(user_name=messages.StringField(1),
                                            email=messages.StringField(2))
 
 MEMCACHE_MOVES_REMAINING = 'MOVES_REMAINING'
+
 
 @endpoints.api(name='hangman', version='v1')
 class HangmanApi(remote.Service):
@@ -44,6 +48,7 @@ class HangmanApi(remote.Service):
         user.put()
         return StringMessage(message='User {} created!'.format(
                 request.user_name))
+
 
     @endpoints.method(request_message=NEW_GAME_REQUEST,
                       response_message=GameForm,
@@ -74,6 +79,7 @@ class HangmanApi(remote.Service):
         taskqueue.add(url='/tasks/cache_average_attempts')
         return game.to_form('Good luck playing Hangman!')
 
+
     @endpoints.method(request_message=GET_GAME_REQUEST,
                       response_message=GameForm,
                       path='game/{urlsafe_game_key}',
@@ -86,6 +92,7 @@ class HangmanApi(remote.Service):
             return game.to_form('Time to make a move!')
         else:
             raise endpoints.NotFoundException('Game not found!')
+
 
     @endpoints.method(request_message=MAKE_MOVE_REQUEST,
                       response_message=GameForm,
@@ -121,6 +128,21 @@ class HangmanApi(remote.Service):
             game.put()
             return game.to_form(msg)
 
+
+    @endpoints.method(request_message=CANCEL_GAME_REQUEST,
+                      response_message=GameForm,
+                      path='game/{urlsafe_game_key}',
+                      name='cancel_game',
+                      http_method='POST')
+    def cancel_game(self, request):
+        game = get_by_urlsafe(request.urlsafe_game_key, Game)
+        if request.cancel:
+                game.end_game(False)
+                game.put()
+                return game.to_form('Game was canceled.')
+        return game.to_form('Game was not canceled.')
+
+
     @endpoints.method(response_message=ScoreForms,
                       path='scores',
                       name='get_scores',
@@ -128,6 +150,7 @@ class HangmanApi(remote.Service):
     def get_scores(self, request):
         """Return all scores"""
         return ScoreForms(items=[score.to_form() for score in Score.query()])
+
 
     @endpoints.method(request_message=USER_REQUEST,
                       response_message=ScoreForms,
@@ -143,6 +166,7 @@ class HangmanApi(remote.Service):
         scores = Score.query(Score.user == user.key)
         return ScoreForms(items=[score.to_form() for score in scores])
 
+
     @endpoints.method(response_message=StringMessage,
                       path='games/average_attempts',
                       name='get_average_attempts_remaining',
@@ -150,6 +174,7 @@ class HangmanApi(remote.Service):
     def get_average_attempts(self, request):
         """Get the cached average moves remaining"""
         return StringMessage(message=memcache.get(MEMCACHE_MOVES_REMAINING) or '')
+
 
     @staticmethod
     def _cache_average_attempts():
