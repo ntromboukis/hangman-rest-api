@@ -105,7 +105,7 @@ class HangmanApi(remote.Service):
                 d[i] = True
                 msg = 'Good guess!'
                 found = True
-        if all(d[x] == True for x in d):
+        if all(d[x] is True for x in d):
             game.end_game(True)
             msg = 'You Win!'
 
