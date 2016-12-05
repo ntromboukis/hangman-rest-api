@@ -108,6 +108,11 @@ class StringMessage(messages.Message):
     message = messages.StringField(1, required=True)
 
 
+class GameForms(messages.Message):
+    """Return multiple GameForms"""
+    games = messages.MessageField(GameForm, 1, repeated=True)
+
+
 class ScoreForms(messages.Message):
     """Return multiple ScoreForms"""
     items = messages.MessageField(ScoreForm, 1, repeated=True)
