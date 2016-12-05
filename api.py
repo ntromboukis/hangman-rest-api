@@ -163,6 +163,16 @@ class HangmanApi(remote.Service):
         """Return all scores"""
         return ScoreForms(items=[score.to_form() for score in Score.query()])
 
+    @endpoints.method(response_message=ScoreForms,
+                      path='highscores',
+                      name='get_high_scores',
+                      http_method='GET')
+    def get_high_scores(self, request):
+        """Returns scores in descending order"""
+        return ScoreForms(
+            items=[score.to_form() for score in Score.query().filter(
+                Score.won == True).order(Score.guesses)])
+
     @endpoints.method(request_message=USER_REQUEST,
                       response_message=ScoreForms,
                       path='scores/user/{user_name}',
