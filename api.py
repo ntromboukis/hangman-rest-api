@@ -50,21 +50,6 @@ class HangmanApi(remote.Service):
         return StringMessage(message='User {} created!'.format(
             request.user_name))
 
-    @endpoints.method(request_message=USER_REQUEST,
-                      response_message=GameForms,
-                      path='game/user/{user_name}',
-                      name='get_user_games',
-                      http_method='GET')
-    def get_user_games(self, request):
-        # Returns games user is a part of
-        user = User.query(User.name == request.user_name).get()
-        if not user:
-            raise endpoints.NotFoundException(
-                'A User with that name does not exist!')
-        games = Game.query(Game.user == user.key).fetch()
-        items = [game.to_form('string') for game in games]
-        return GameForms(games=items)
-
     @endpoints.method(request_message=NEW_GAME_REQUEST,
                       response_message=GameForm,
                       path='game',
@@ -107,6 +92,21 @@ class HangmanApi(remote.Service):
             return game.to_form('Time to make a move!')
         else:
             raise endpoints.NotFoundException('Game not found!')
+
+    @endpoints.method(request_message=USER_REQUEST,
+                      response_message=GameForms,
+                      path='game/user/{user_name}',
+                      name='get_user_games',
+                      http_method='GET')
+    def get_user_games(self, request):
+        # Returns games user is a part of
+        user = User.query(User.name == request.user_name).get()
+        if not user:
+            raise endpoints.NotFoundException(
+                'A User with that name does not exist!')
+        games = Game.query(Game.user == user.key).fetch()
+        items = [game.to_form('string') for game in games]
+        return GameForms(games=items)
 
     @endpoints.method(request_message=MAKE_MOVE_REQUEST,
                       response_message=GameForm,
