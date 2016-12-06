@@ -99,7 +99,7 @@ class HangmanApi(remote.Service):
                       name='get_user_games',
                       http_method='GET')
     def get_user_games(self, request):
-        # Returns games user is a part of
+        """Returns games user is a part of"""
         user = User.query(User.name == request.user_name).get()
         if not user:
             raise endpoints.NotFoundException(
@@ -148,6 +148,7 @@ class HangmanApi(remote.Service):
                       name='cancel_game',
                       http_method='POST')
     def cancel_game(self, request):
+        """Cancels game, user loses by default"""
         game = get_by_urlsafe(request.urlsafe_game_key, Game)
         if request.cancel:
                 game.end_game(False)
