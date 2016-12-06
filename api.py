@@ -187,6 +187,29 @@ class HangmanApi(remote.Service):
         scores = Score.query(Score.user == user.key)
         return ScoreForms(items=[score.to_form() for score in scores])
 
+    @endpoints.method(request_message=USER_REQUEST,
+                      response_message=StringMessage,
+                      path='rank/{user_name}',
+                      name='get_user_rankings',
+                      http_method='GET')
+    def get_user_rankings(self, request):
+        """Returns ranking of a user"""
+        user = User.query(User.name == request.user_name).get()
+        if not user:
+            raise endpoints.NotFoundException(
+                'A User with that name does not exist!')
+        rank = 1
+        query = Score.query().filter(Score.won == True).order(Score.guesses).fetch()
+        for score in query:
+            if user.key == score.user:
+                msg = str(rank)
+                return StringMessage(message=msg)
+            else:
+                rank += 1
+        msg = 'User not ranked'
+        return StringMessage(message=msg)
+
+
     @endpoints.method(response_message=StringMessage,
                       path='games/average_attempts',
                       name='get_average_attempts_remaining',
